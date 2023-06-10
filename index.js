@@ -28,6 +28,7 @@ async function run() {
     await client.connect();
     const classesCollection = client.db('summerCamp').collection('classes')
     const usersCollection = client.db('summerCamp').collection('users')
+    const selectedCollection = client.db('summerCamp').collection('selected')
 
     app.post('/classes',async(req,res)=>{
       const data = req.body;
@@ -35,13 +36,13 @@ async function run() {
       const result = await classesCollection.insertOne(data.addInfo)
       res.send(result) 
     })
+    app.get('/classes',async(req,res)=>{
+      const result =await classesCollection.find().toArray()
+      res.send(result)
+    })
 
     // Users Collection
-    app.post('/users',async(req,res)=>{
-      const user = req.body;
-      console.log(user)
-      // const result = await usersCollection.insertOne(user)
-    })
+   
     
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
