@@ -10,7 +10,7 @@ app.use(express.json())
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = process.env.DB_URI
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -40,7 +40,30 @@ async function run() {
       const result =await classesCollection.find().toArray()
       res.send(result)
     })
-
+    app.patch('/classes/:id',async(req,res)=>{
+      const id = req.params.id
+      console.log(id)
+      const filter = {_id: new ObjectId(id)}
+      const filter2 = {_id:id}
+      const result = await classesCollection.findOne(filter)
+      const selectedItem = await selectedCollection.findOne(filter2)
+      console.log({selectedItem})
+      const options = { upsert : true }
+      const enroll = {
+        $set:{
+          enroll:result?.enroll ?  result.enroll + 1 : 1
+        }
+      }
+      if(selectedItem){
+        const updateSelected = await selectedCollection.updateOne(filter2,enroll,options);
+        const updateEnroll = await classesCollection.updateOne(filter,enroll,options);
+        res.send({updateEnroll,updateSelected})
+      }else{
+        const updateEnroll = await classesCollection.updateOne(filter,enroll,options);
+        res.send(updateEnroll)
+      }
+    })
+    
     // Users Collection
     app.post('/users',async(req,res)=>{
       const user = req.body;
@@ -49,7 +72,27 @@ async function run() {
       res.send(result)
     })
 
+    //selected Classes
+    app.post('/selected',async(req,res)=>{
+      const select = req.body;
+      select.item.email = req.body.email;
+      console.log(select.item._id)
+      const filter = {_id: select.item._id}
+      const selectedItem = await selectedCollection.findOne(filter)
+      if(!selectedItem){
+        const result = await selectedCollection.insertOne(select.item)
+        res.send(result)
+      }
+    }) 
     
+    app.get('/selected', async (req, res) => {
+      let query = {};
+      if(req.query?.email){
+        query = {email: req.query.email}
+      }
+      const result = await selectedCollection.find(query).toArray();
+      res.send(result)
+    })
 
     
     // Send a ping to confirm a successful connection
