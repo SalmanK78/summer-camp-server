@@ -29,6 +29,7 @@ async function run() {
     const classesCollection = client.db('summerCamp').collection('classes')
     const usersCollection = client.db('summerCamp').collection('users')
     const selectedCollection = client.db('summerCamp').collection('selected')
+    const requestsCollection = client.db('summerCamp').collection('requests')
 
     app.post('/classes',async(req,res)=>{
       const data = req.body;
@@ -44,14 +45,14 @@ async function run() {
       const id = req.params.id
       console.log(id)
       const filter = {_id: new ObjectId(id)}
-      const filter2 = {_id:id}
+      const filter2 = {_id: new ObjectId(id)}
       const result = await classesCollection.findOne(filter)
       const selectedItem = await selectedCollection.findOne(filter2)
       console.log({selectedItem})
       const options = { upsert : true }
       const enroll = {
         $set:{
-          enroll:result?.enroll ?  result.enroll + 1 : 1
+          enroll:parseInt(result?.enroll ?  result.enroll + 1 : 1)
         }
       }
       if(selectedItem){
@@ -72,6 +73,12 @@ async function run() {
       const result = await classesCollection.find(query).toArray();
       res.send(result)
     })
+    app.delete('/addedclasses/:id' , async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await classesCollection.deleteOne(query)
+      res.send(result)
+    })
     
     // Users Collection
     app.post('/users',async(req,res)=>{
@@ -84,14 +91,11 @@ async function run() {
     //selected Classes
     app.post('/selected',async(req,res)=>{
       const select = req.body;
-      select.item.email = req.body.email;
-      console.log(select.item._id)
-      const filter = {_id: select.item._id}
-      const selectedItem = await selectedCollection.findOne(filter)
-      if(!selectedItem){
-        const result = await selectedCollection.insertOne(select.item)
-        res.send(result)
-      }
+      const items = select.item
+      items.email = req.body.email;
+      delete select.item._id
+      const result = await selectedCollection.insertOne(items)
+      res.send(result)      
     }) 
     
     app.get('/selected', async (req, res) => {
@@ -102,10 +106,22 @@ async function run() {
       const result = await selectedCollection.find(query).toArray();
       res.send(result)
     })
-    
-    app.delete('/selected/:id' , async(req,res)=>{
-      const query = {_id: req.params.id }
+
+    app.delete('/selected/:id',async(req,res)=>{
+      const id = req.params.id
+      console.log(id)
+      const query = {_id: new ObjectId(id) }
       const result = await selectedCollection.deleteOne(query)
+      res.send(result)
+    })
+
+    //Enrolled classes
+    app.get('/popular',async(req,res)=>{
+      const query = {}
+      const options = {
+        sort:{"enroll" : -1 }
+      }
+      const result = await classesCollection.find(query,options).toArray()
       res.send(result)
     })
 
