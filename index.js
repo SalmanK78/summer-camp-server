@@ -63,6 +63,15 @@ async function run() {
         res.send(updateEnroll)
       }
     })
+    // instructor added classes
+    app.get('/addedclasses',async(req,res)=>{
+      let query = {};
+      if(req.query?.email){
+        query = {email: req.query.email}
+      }
+      const result = await classesCollection.find(query).toArray();
+      res.send(result)
+    })
     
     // Users Collection
     app.post('/users',async(req,res)=>{
