@@ -102,6 +102,12 @@ async function run() {
       const result = await selectedCollection.find(query).toArray();
       res.send(result)
     })
+    
+    app.delete('/selected/:id' , async(req,res)=>{
+      const query = {_id: req.params.id }
+      const result = await selectedCollection.deleteOne(query)
+      res.send(result)
+    })
 
     
     // Send a ping to confirm a successful connection
